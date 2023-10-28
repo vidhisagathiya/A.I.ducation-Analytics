@@ -9,8 +9,7 @@ The objective of this project is to develop a Deep Learning Convolutional Neural
 2. [File Structure](#file-structure)
 3. [Data Cleaning](#data-cleaning)
 4. [Data Visualization](#data-visualization)
-5. [Usage](#usage)
-6. [Contributors](#contributors)
+5. [Contributors](#contributors)
 
 ## Introduction
 
