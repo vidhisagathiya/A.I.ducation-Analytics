@@ -64,7 +64,7 @@ Update the folders list in the main_program.py script if your dataset has differ
 
 Execute the program by running the following command in your terminal:
 
-**"python main_program.py"**
+**"python Dataset_Visualization.py"**
 
 After execution, the program will display:
 
