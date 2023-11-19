@@ -85,6 +85,7 @@ Modify the base_directory variable in the below script if your dataset is locate
 - Train.py
 - App_model.py
 
+Update the image path (image_path) in App_model.py to predict for a single image
 Update the folders list in the Dataset_Visualization.py script if your dataset has different classes or folders.
 
 ## Execution
