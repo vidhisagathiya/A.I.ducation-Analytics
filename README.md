@@ -80,13 +80,13 @@ conda install pytorch torchvision -c pytorch
 
 ## Configuration
 
-Modify the base_directory variable in the below script if your dataset is located in a different directory.
+1. Modify the base_directory variable in the below script if your dataset is located in a different directory.
 - Dataset_Visualization.py
 - Train.py
 - App_model.py
 
-Update the image path (image_path) in App_model.py to predict for a single image
-Update the folders list in the Dataset_Visualization.py script if your dataset has different classes or folders.
+2. Update the image path (image_path) in App_model.py to predict for a single image.
+3. Update the folders list in the Dataset_Visualization.py script if your dataset has different classes or folders.
 
 ## Execution
 
