@@ -12,7 +12,9 @@ The objective of this project is to develop a Deep Learning Convolutional Neural
 5. [Training the CNN Model](#training-the-cnn-model)
 6. [CNN Variants](#cnn-variants)
 7. [Evaluation](#evaluation)
-8. [Contributors](#contributors)
+8. [Bias Analysis](#bias_analysis)
+9. [K-Fold Cross-Validation](#k_fold_cross_validation)
+10. [Contributors](#contributors)
 
 ## Introduction
 
@@ -62,6 +64,12 @@ Comparing the performance of final architecture against two distinct architectur
 
 ## Evaluation
 Evaluate the performance of your main model and its two variants, using the same testing data for all models: For each model, generate a confusion matrix to visualize classification performance. Also evaluate the metrics accuracy, precision, recall, and F1- measure.
+
+## Bias-Analysis
+To ensure the fairness and robustness of our model, we conduct a Bias Analysis by segmenting the dataset based on chosen attributes such as age and gender. It is essential to accurately annotate these attributes in the dataset. 
+
+## k_fold_cross_validation
+To enhance the robustness and reliability, we have employed k-fold cross-validation of our evaluation.
 
 ## Prerequisites:
 
@@ -144,7 +152,7 @@ After execution, the program will display:
 - Plots confusion matrices for the main model and variant models on the validation set.
 - Calculates and prints precision, recall, F1-score, and accuracy metrics for the main model and variants in a tabular format.
 
- ## K-Fold Cross-Validation (kfold.py)
+**"kfold.py":**
 
 The `kfold.py` script implements K-Fold Cross-Validation to evaluate the performance of the CNN model on the dataset. It uses the Stratified K-Fold technique to ensure balanced distribution of classes across folds.
  
