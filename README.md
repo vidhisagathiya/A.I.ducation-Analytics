@@ -68,6 +68,7 @@ Evaluate the performance of your main model and its two variants, using the same
 Ensure you have the required libraries installed:
 
 "pip install matplotlib" 
+"pip install torch torchvision scikit-learn scikit-image prettytable"
 
 To set up the necessary environment using conda, follow the steps below:
 - create a new conda environment. This helps in maintaining a clean workspace
@@ -76,7 +77,6 @@ and run: conda create --name pytorch_env python=3.8
 - Activate the environment: conda activate pytorch_env
 - Install PyTorch and torchvision using the official channel:2
 conda install pytorch torchvision -c pytorch
-- other required libraries such as matplotlib for visualization,: conda install matplotlib
 
 ## Configuration
 
@@ -144,6 +144,10 @@ After execution, the program will display:
 - Plots confusion matrices for the main model and variant models on the validation set.
 - Calculates and prints precision, recall, F1-score, and accuracy metrics for the main model and variants in a tabular format.
 
+ ## K-Fold Cross-Validation (kfold.py)
+
+The `kfold.py` script implements K-Fold Cross-Validation to evaluate the performance of the CNN model on the dataset. It uses the Stratified K-Fold technique to ensure balanced distribution of classes across folds.
+ 
   
 ## Contributors
 
