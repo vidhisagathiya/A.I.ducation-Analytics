@@ -163,12 +163,12 @@ def plot_results(model, data_loader, class_names=None, x=2, y=5):
     plt.show()
 
 if __name__ == "__main__":
-    # Define the path to dataset
+    # Define the path to your dataset
     data_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/dataset"
-    input_channels = 3  
-    num_classes = 4  
+    input_channels = 3  # Adjust based on your dataset
+    num_classes = 4  # Adjust based on your dataset
 
-    # Load custom dataset
+    # Load your custom dataset
     dataset = ImageFolder(
         root=data_path,
         transform=transforms.Compose([
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     class_names = ["Anger", "Bored", "Engaged", "Neutral"]
 
     # Predict for a single image
-    image_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/image_8.jpg"  # Provide the path to single image
+    image_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/image_8.jpg"  # Provide the path to your single image
     predicted_class = predict_single_image(image_path, loaded_model, class_names)
     print(f"Predicted class for the single image: {predicted_class}")
     plot_single_image_prediction(image_path, loaded_model, class_names)

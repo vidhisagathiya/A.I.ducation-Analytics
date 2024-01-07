@@ -29,6 +29,7 @@ class CNNVariant2(nn.Module):
             
             nn.MaxPool2d(kernel_size=2, stride=2),
             
+            # You can experiment with more convolutional layers and kernel sizes
         )
         self.fc_input_size = 64 * 12 * 12
         self.fc_layer = nn.Sequential(

@@ -22,9 +22,9 @@ class MyDataset(td.Dataset):
     def __getitem__(self, index):
         return self.X[index], self.y[index]
 
-# Function to load custom dataset and split into train, test, and validation sets
+# Function to load your custom dataset and split into train, test, and validation sets
 def custom_loader(data_path, batch_size, test_size=0.15, val_size=0.15, shuffle_test=False):
-    # Define normalization values for dataset
+    # Define normalization values for your dataset
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.225, 0.225, 0.225])
 
@@ -86,113 +86,175 @@ class CNN(nn.Module):
         x = self.fc_layer(x)
         return x
 
-# Update hyperparameters and settings
-batch_size = 64
-num_epochs = 10
-learning_rate = 0.001
+# # Training function
+# def train_model(model, train_loader, num_epochs, learning_rate):
+#     criterion = nn.CrossEntropyLoss()
+#     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-# Define the path to dataset
-data_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/dataset"
+#     total_step = len(train_loader)
+#     loss_list = []
+#     acc_list = []
 
-# Load custom dataset and split into train, test, and validation
-train_loader, test_loader, val_loader = custom_loader(data_path, batch_size, test_size=0.15, val_size=0.15, shuffle_test=False)
+#     for epoch in range(num_epochs):
+#         for i, (images, labels) in enumerate(train_loader):
+#             # Forward pass
+#             outputs = model(images)
+#             loss = criterion(outputs, labels)
+#             loss_list.append(loss.item())
 
-# Create the neural network model
-model = CNN()
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+#             # Backpropagation and optimization
+#             optimizer.zero_grad()
+#             loss.backward()
+#             optimizer.step()
 
-# Training phase
-total_step = len(train_loader)
-loss_list = []
-acc_list = []
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
-        # Forward pass
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss_list.append(loss.item())
+#             # Train accuracy
+#             total = labels.size(0)
+#             _, predicted = torch.max(outputs.data, 1)
+#             correct = (predicted == labels).sum().item()
+#             acc_list.append(correct / total)
 
-        # Backpropagation and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+#             # Print training statistics
+#             if (i + 1) % (total_step // 10) == 0:
+#                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
+#                       .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(), (correct / total) * 100))
 
-        # Train accuracy
-        total = labels.size(0)
-        _, predicted = torch.max(outputs.data, 1)
-        correct = (predicted == labels).sum().item()
-        acc_list.append(correct / total)
+#     return model, loss_list, acc_list
 
-        # Print training statistics
-        if (i + 1) % (total_step // 10) == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-                  .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(),(correct / total) * 100))
+# Training function with validation and early stopping
+def train_model_with_validation(model, train_loader, val_loader, num_epochs, learning_rate):
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-# Save the trained model
-torch.save(model.state_dict(), 'trained_model.pth')
-print('Trained model saved successfully.')
+    total_step = len(train_loader)
+    loss_list = []
+    acc_list = []
+    best_val_loss = float('inf')
+    patience = 5  # Adjust as needed
 
-# Testing phase
-model.eval()
-with torch.no_grad():
-    correct = 0
-    total = 0
-    for images, labels in test_loader:
-        outputs = model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    for epoch in range(num_epochs):
+        model.train()
+        for i, (images, labels) in enumerate(train_loader):
+            # Forward pass
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss_list.append(loss.item())
 
-# Calculate and print accuracy for the test set
-print('Test Accuracy on the test set: {:.2f}%'.format(100 * correct / total))
+            # Backpropagation and optimization
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-# Initialize and fit the skorch model
-torch.manual_seed(0)
-net = NeuralNetClassifier(
-    model,
-    max_epochs=0,  # Set max_epochs=0 to avoid further training during evaluation
-    lr=learning_rate,
-    batch_size=batch_size,
-    optimizer=torch.optim.Adam,
-    criterion=criterion,
-    callbacks=[('earlystopping', EarlyStopping())],  
-    device=torch.device("cpu"),  
-)
+            # Train accuracy
+            total = labels.size(0)
+            _, predicted = torch.max(outputs.data, 1)
+            correct = (predicted == labels).sum().item()
+            acc_list.append(correct / total)
 
-# Convert PyTorch tensors to numpy arrays for skorch
-X_train = np.concatenate([x.numpy() for x, _ in iter(train_loader)])
-y_train = np.concatenate([y.numpy() for _, y in iter(train_loader)])
+            # Print training statistics
+            if (i + 1) % (total_step // 10) == 0:
+                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
+                      .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(), (correct / total) * 100))
 
-# Initialize and fit the skorch model
-net.initialize()
-net.fit(MyDataset(X_train, y_train), y=y_train)
+        # Validation
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for images, labels in val_loader:
+                outputs = model(images)
+                val_loss += criterion(outputs, labels).item()
 
-# Make predictions on the validation set
-y_pred_list = []
-with torch.no_grad():
-    for images, labels in val_loader:
-        outputs = net.predict_proba(images)
-        y_pred_list.append(outputs)
+        val_loss /= len(val_loader)
+        print(f'Validation Loss: {val_loss}')
 
-# Concatenate the predictions from the list
-y_pred = np.concatenate(y_pred_list).argmax(axis=1)
+        # Early stopping
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            save_model(model, 'trained_model.pth')
 
-# Get the true labels for the validation set
-y_test = np.array([y for _, y in iter(val_loader.dataset)])
+        else:
+            patience -= 1
+            if patience == 0:
+                print("Early stopping. No improvement in validation loss.")
+                break
 
-# Calculate accuracy
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy on the validation set using skorch: {accuracy * 100:.2f}%")
+    return model, loss_list, acc_list
 
-# Generate and display the confusion matrix
-conf_matrix = confusion_matrix(y_test, y_pred)
-display_labels = ['Anger', 'Bored', 'Engaged', 'Neutral']
 
-# Create ConfusionMatrixDisplay object
-cm_display = ConfusionMatrixDisplay(conf_matrix, display_labels=display_labels)
+# Testing function
+def test_model(model, test_loader):
+    model.eval()
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for images, labels in test_loader:
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-# Plot the confusion matrix
-fig, ax = plt.subplots(figsize=(8, 8))
-cm_display.plot(cmap='viridis', ax=ax)
-plt.show()
+    accuracy = correct / total
+    return accuracy
+
+# Save model function
+def save_model(model, path):
+    torch.save(model.state_dict(), path)
+    print(f'Model saved successfully at {path}')
+
+# Evaluate function using skorch
+def evaluate_skorch_model(model, train_loader):
+    net = NeuralNetClassifier(
+        model,
+        max_epochs=0,
+        lr=learning_rate,
+        batch_size=batch_size,
+        optimizer=torch.optim.Adam,
+        criterion=nn.CrossEntropyLoss(),
+        callbacks=[('earlystopping', EarlyStopping(patience=5, threshold=0.01))],
+        device=torch.device("cpu"),
+    )
+
+    X_train = np.concatenate([x.numpy() for x, _ in iter(train_loader)])
+    y_train = np.concatenate([y.numpy() for _, y in iter(train_loader)])
+
+    net.initialize()
+    net.fit(MyDataset(X_train, y_train), y=y_train)
+
+    return net
+
+# Display confusion matrix
+def display_confusion_matrix(y_test, y_pred, display_labels):
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    cm_display = ConfusionMatrixDisplay(conf_matrix, display_labels=display_labels)
+
+    # Plot the confusion matrix
+    fig, ax = plt.subplots(figsize=(8, 8))
+    cm_display.plot(cmap='viridis', ax=ax)
+    plt.show()
+
+if __name__ == "__main__":
+    # Update hyperparameters and settings
+    batch_size = 64
+    num_epochs = 15
+    learning_rate = 0.001
+
+    # Define the path to your dataset
+    data_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/new_Dataset"
+
+    # Load your custom dataset and split into train, test, and validation
+    train_loader, test_loader, val_loader = custom_loader(data_path, batch_size, test_size=0.15, val_size=0.15, shuffle_test=False)
+
+    # Create the neural network model
+    model = CNN()
+
+    # Train the model
+    trained_model, loss_list, acc_list = train_model_with_validation(model, train_loader, val_loader, num_epochs, learning_rate)
+
+    # Save the trained model
+    save_model(trained_model, 'trained_model.pth')
+
+    # Test the model
+    test_accuracy = test_model(trained_model, test_loader)
+    print(f'Test Accuracy on the test set: {test_accuracy * 100:.2f}%')
+
+    # Display confusion matrix
+    display_labels = ['Anger', 'Bored', 'Engaged', 'Neutral']

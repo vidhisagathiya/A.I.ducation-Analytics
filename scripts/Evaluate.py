@@ -1,19 +1,16 @@
-# evaluate.py
-
 import torch
 import torch.nn as nn
 import torch.utils.data as td
 import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold
 from skorch import NeuralNetClassifier
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support
-from skorch.callbacks import EarlyStopping
-from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, confusion_matrix, precision_recall_fscore_support, ConfusionMatrixDisplay
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Import variant models
+
+# Import your variant models
 from CNN_variant1 import CNNVariant1
 from CNN_variant2 import CNNVariant2
 from Train import CNN
@@ -28,11 +25,11 @@ class MyDataset(td.Dataset):
         return len(self.X)
 
     def __getitem__(self, index):
-        return self.X[index], self.y[index]
+        return self.X[index], torch.tensor(self.y[index], dtype=torch.long)  # Assuming labels are integers
 
-# Function to load custom dataset and split into train, test, and validation sets
+# Function to load your custom dataset and split into train, test, and validation sets
 def custom_loader(data_path, batch_size, test_size=0.15, val_size=0.15, shuffle_test=False):
-    # Define normalization values for dataset
+    # Define normalization values for your dataset
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.225, 0.225, 0.225])
 
@@ -74,67 +71,52 @@ def evaluate_model(model, data_loader):
     return y_true, y_pred
 
 # Function to plot confusion matrix
-def plot_confusion_matrix(y_true, y_pred, display_labels):
+def plot_confusion_matrix(y_true, y_pred, display_labels, model_name):
     conf_matrix = confusion_matrix(y_true, y_pred)
     cm_display = ConfusionMatrixDisplay(conf_matrix, display_labels=display_labels)
 
-    ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(8, 8))
     cm_display.plot(cmap='viridis', ax=ax)
+    ax.set_title(f'Confusion Matrix - {model_name}')
+    ax.set_xlabel('Predicted Labels')
+    ax.set_ylabel('True Labels')
     plt.show()
 
-# Define the path to dataset
+# Define the path to your dataset
 data_path = "/Users/vidhisagathiya/Documents/NS_14_Project_Part#2/dataset"
 
-# Load custom dataset and split into train, test, and validation
+# Load your custom dataset and split into train, test, and validation
 train_loader, test_loader, val_loader = custom_loader(data_path, batch_size=64, test_size=0.15, val_size=0.15, shuffle_test=False)
 
 # Evaluate the main model
 model_main = CNN()
-model_main.load_state_dict(torch.load('trained_model.pth'))
+model_main.load_state_dict(torch.load('trained_model.pth'))  # Load pre-trained weights
 model_main.eval()
-y_true_main, y_pred_main = evaluate_model(model_main, val_loader)
-
-# Experiment 1: Vary the Number of Convolutional Layers
-model_variant1 = CNNVariant1()
-# Update hyperparameters and settings if needed
-num_epochs = 10
-learning_rate = 0.001
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model_variant1.parameters(), lr=learning_rate)
-
-# Training phase
-total_step = len(train_loader)
-loss_list = []
-acc_list = []
-
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
-        # Forward pass
-        outputs = model_variant1(images)
-        loss = criterion(outputs, labels)
-        loss_list.append(loss.item())
-
-        # Backpropagation and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # Train accuracy
-        total = labels.size(0)
-        _, predicted = torch.max(outputs.data, 1)
-        correct = (predicted == labels).sum().item()
-        acc_list.append(correct / total)
-
-        # Print training statistics
-        if (i + 1) % (total_step // 10) == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-                  .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(), (correct / total) * 100))
-
-# Save the trained model
-torch.save(model_variant1.state_dict(), 'trained_model_variant1.pth')
-print('Trained model variant 1 saved successfully.')
 
 # Evaluation phase
+model_main.eval()
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for images, labels in test_loader:
+        outputs = model_main(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+# Calculate and print accuracy for the test set
+print('Test Accuracy on Main Model: {:.2f}%'.format(100 * correct / total))
+
+# Make predictions on the validation set
+y_true_main, y_pred_main = evaluate_model(model_main, val_loader)
+
+
+# Load and evaluate CNN Variant 1
+model_variant1 = CNNVariant1()
+model_variant1.load_state_dict(torch.load('trained_model_variant1.pth'))  # Load pre-trained weights
+model_variant1.eval()
+
+# Evaluation phase for CNN Variant 1
 model_variant1.eval()
 with torch.no_grad():
     correct = 0
@@ -148,51 +130,15 @@ with torch.no_grad():
 # Calculate and print accuracy for the test set
 print('Test Accuracy on Variant 1: {:.2f}%'.format(100 * correct / total))
 
-# Make predictions on the validation set
+# Make predictions on the validation set for CNN Variant 1
 y_true_variant1, y_pred_variant1 = evaluate_model(model_variant1, val_loader)
 
-
-# Experiment 2: Experiment with Different Kernel Sizes
+# Load and evaluate CNN Variant 2
 model_variant2 = CNNVariant2()
-# Update hyperparameters and settings if needed
-num_epochs = 10
-learning_rate = 0.001
-criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model_variant2.parameters(), lr=learning_rate)
+model_variant2.load_state_dict(torch.load('trained_model_variant2.pth'))  # Load pre-trained weights
+model_variant2.eval()
 
-# Training phase
-total_step = len(train_loader)
-loss_list = []
-acc_list = []
-
-for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
-        # Forward pass
-        outputs = model_variant2(images)
-        loss = criterion(outputs, labels)
-        loss_list.append(loss.item())
-
-        # Backpropagation and optimization
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # Train accuracy
-        total = labels.size(0)
-        _, predicted = torch.max(outputs.data, 1)
-        correct = (predicted == labels).sum().item()
-        acc_list.append(correct / total)
-
-        # Print training statistics
-        if (i + 1) % (total_step // 10) == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-                  .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(), (correct / total) * 100))
-
-# Save the trained model
-torch.save(model_variant2.state_dict(), 'trained_model_variant2.pth')
-print('Trained model variant 2 saved successfully.')
-
-# Evaluation phase
+# Evaluation phase for CNN Variant 2
 model_variant2.eval()
 with torch.no_grad():
     correct = 0
@@ -206,20 +152,26 @@ with torch.no_grad():
 # Calculate and print accuracy for the test set
 print('Test Accuracy on Variant 2: {:.2f}%'.format(100 * correct / total))
 
-# Make predictions on the validation set
+# Make predictions on the validation set for CNN Variant 2
 y_true_variant2, y_pred_variant2 = evaluate_model(model_variant2, val_loader)
 
+# Document changes and observations for Variant 2
+# ...
+
+# Compare performance
 # Print confusion matrix for each model
-display_labels = ['Anger', 'Bored', 'Engaged', 'Neutral']  # Update with actual class labels
+display_labels = ['Anger', 'Bored', 'Engaged', 'Neutral']  # Update with your actual class labels
 
 # Main Model
-plot_confusion_matrix(y_true_main, y_pred_main, display_labels)
+plot_confusion_matrix(y_true_main, y_pred_main, display_labels, 'Main Model')
 
 # Variant 1
-plot_confusion_matrix(y_true_variant1, y_pred_variant1, display_labels)
+plot_confusion_matrix(y_true_variant1, y_pred_variant1, display_labels, 'Variant 1')
 
 # Variant 2
-plot_confusion_matrix(y_true_variant2, y_pred_variant2, display_labels)
+plot_confusion_matrix(y_true_variant2, y_pred_variant2, display_labels, 'Variant 2')
+
+# ...
 
 # Calculate and print metrics in a table
 metrics_main = precision_recall_fscore_support(y_true_main, y_pred_main, average='macro'), \

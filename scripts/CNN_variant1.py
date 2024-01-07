@@ -24,7 +24,8 @@ class CNNVariant1(nn.Module):
             nn.LeakyReLU(inplace=True),
             
             nn.MaxPool2d(kernel_size=2, stride=2),
-        
+            
+            # You can add more convolutional layers as needed for the variant
         )
         self.fc_input_size = 64 * 12 * 12
         self.fc_layer = nn.Sequential(
